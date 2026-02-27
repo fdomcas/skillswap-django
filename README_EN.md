@@ -23,8 +23,7 @@
 - [Project Structure](#project-structure)
 - [Workflow](#workflow)
 - [Contributing](#contributing)
-- [Team](#team)
-- [License](#license)
+- [Development Team](#development-team)
 
 ---
 
