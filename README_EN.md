@@ -2,11 +2,9 @@
 
 <div align="center">
 
-![SkillSwap Logo](./core/static/imgs/sadcat.gif)
+![SkillSwap Logo](./staticfiles/imgs/logo.png)
 
 **A collaborative platform for exchanging skills and knowledge**
-
-[Features](#features) • [Tech Stack](#tech-stack) • [Installation](#installation) • [Workflow](#workflow) • [License](#license)
 
 </div>
 
@@ -22,7 +20,6 @@
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Workflow](#workflow)
-- [Contributing](#contributing)
 - [Development Team](#development-team)
 
 ---
@@ -35,40 +32,26 @@ The platform enables users to:
 - Create posts offering or requesting specific skills
 - Search and filter available skills and users
 - Manage their user profile with preferences and interests
+- Reach agreements for skill exchange and track their status
 - Maintain persistent search preferences and filters across cookies & sessions
-- Enjoy a seamless experience in both light and dark themes
 
-### 👥 Team Contributions
+### 👥 Team Roles
 
 This project was developed collaboratively with clear role separation:
 
-**Data & ORM Layer** (*jherhum1702*)
-- Database models and relationships with proper constraints
-- Advanced ORM queries using Q objects, F expressions, annotations, and aggregations
-- Query optimization with `select_related()` and `prefetch_related()`
-- Database migrations and schema design
-- Test data population and fixtures
+**Data & ORM Layer** (*José Antonio Hernández Humanes*)
+- Models, relations, restrictions, and migrations
+- Functionalities that require Q/F/annotate/aggregate and optimization with select/prefetch
+- Middleware for SPAM protection and session management
 
-**Workflows & Security** (*fdomcas*)
-- Custom user model with extended functionality
-- User groups, permissions, and access control rules
-- Complete publication workflow (creation, modification, state management)
-- Agreement tracking and follow-up system
-- Form validation and security measures
-- XSS protection and CSRF defense
+**Workflows & Security** (*Fabián Domínguez Casado*)
+- Custom user model, group permissions, and access rules.
+- Flows for creating posts, agreements, follow up and form validation.
 
-**Infrastructure & Documentation** (*amahcan562-ies*)
-- Docker containerization and docker-compose orchestration
-- PostgreSQL database setup and management
-- Environment configuration and secrets management
-- Cookie-based user preferences (theme, language)
-- Session-based state persistence (search filters)
-- Anti-spam middleware implementation
-- Complete project documentation and README
-
----
-
-This project was developed as part of an educational course focusing on professional web development practices including version control, collaborative workflows, database design, security, and full-stack development with Django.
+**Infrastructure & Documentation** (*Andrés Mahindo Canalo*)
+- Docker containerization, PostgreSQL setup, and environment variables.
+- Cookie-based user preferences and Session-based state persistence.
+- Complete project documentation and traceability map.
 
 ---
 
@@ -77,20 +60,13 @@ This project was developed as part of an educational course focusing on professi
 ### Core Features
 - 🔐 **User Authentication**: Secure registration and login system
 - 💬 **Skill Exchange**: Create posts to offer or request skills
-- 🔍 **Advanced Search & Filtering**: Search by skill type, category, and status with persistent filters
-- 👤 **User Profiles**: Customizable user profiles with timezone support
-- 🌍 **Internationalization**: Multi-language support (Spanish/English)
-- 🎨 **Theme Support**: Light and dark mode with user preference cookies
-- 📱 **Responsive Design**: Mobile-friendly interface using Bootstrap
+- 🔍 **Filtering**: Filter by skill name and user preference
+- 👤 **User Profiles**: Customizable user profiles with habilities and timezone setting
+- 🎨 **Customization**: Cookie based theme and language preferences
+- 🤝 **Agreements**: Section to manage skill exchange agreements and their status
 - 🛡️ **Anti-Spam Protection**: Middleware to prevent spam attacks
 - 💾 **Session Management**: Persistent filters and preferences
 
-### Technical Features
-- Docker containerization for consistent deployment
-- PostgreSQL database with migrations
-- Gunicorn WSGI server
-- Static file management with WhiteNoise
-- Cloudflare Tunnel integration for external access
 
 ---
 
