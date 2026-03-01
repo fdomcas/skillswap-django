@@ -414,7 +414,6 @@ def change_preference(request):
         }
     """
     theme = request.POST.get('theme')
-    lang = request.POST.get('lang')
 
     redirect_url = request.META.get('HTTP_REFERER', reverse_lazy('core:home'))
 
@@ -422,8 +421,6 @@ def change_preference(request):
 
     if theme:
         response.set_cookie('theme', theme, max_age=365*24*60*60)
-    if lang:
-        response.set_cookie('lang', lang, max_age=365*24*60*60)
 
     return response
 
