@@ -299,8 +299,8 @@ class CustomloginForm(AuthenticationForm):
         return self.cleaned_data
 
 class ProfileForm(forms.ModelForm):
-    def init(self, args, **kwargs):
-        super().init(args, **kwargs)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         if self.instance.pk:
             habilidades_actuales = self.instance.habilidades.values_list('nombre', flat=True)
             self.fields['habilidades_nuevas'].initial = ', '.join(habilidades_actuales)
