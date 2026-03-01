@@ -25,13 +25,12 @@ from .session_manager import SessionManager
 
 
 
-class AutororOModerarorMixin:
-    class AutorOModeradorMixin:
-        def dispatch(self, request, *args, **kwargs):
-            obj = self.get_object()
-            if obj.autor != request.user and not request.user.is_staff:
-                raise PermissionDenied
-            return super().dispatch(request, *args, **kwargs)
+class AutorOModeradorMixin:
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.autor != request.user and not request.user.is_staff:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
 
 class AcuerdoUpdateParticipant:
@@ -558,7 +557,7 @@ class PostCreateview(LoginRequiredMixin,CreateView):
 
 
 
-class PostUpdateView(LoginRequiredMixin,AutororOModerarorMixin, UpdateView):
+class PostUpdateView(LoginRequiredMixin,AutorOModeradorMixin, UpdateView):
     model = Publicacion
     form_class = PostCreate
     context_object_name = 'post'
@@ -581,7 +580,7 @@ class PostUpdateView(LoginRequiredMixin,AutororOModerarorMixin, UpdateView):
         )
         return context
 
-class PostCloseView(LoginRequiredMixin,AutororOModerarorMixin,View):
+class PostCloseView(LoginRequiredMixin,AutorOModeradorMixin,View):
     def post(self, request, pk):
         publicacion = get_object_or_404(Publicacion, pk=pk, autor=request.user)
         publicacion.estado = False
