@@ -12,7 +12,7 @@
 
           <!-- Usuarios + Estado -->
           <div class="d-flex align-items-center justify-content-between">
-            <span class="fw-semibold small text-dark">
+            <span class="fw-semibold small {% if theme == 'dark' %}text-light{% else %}text-dark{% endif %}">
               <i class="fas fa-user me-1 text-muted"></i>{{ deal.usuario_a }}
               <span class="text-muted mx-1">↔</span>
               {{ deal.usuario_b }}

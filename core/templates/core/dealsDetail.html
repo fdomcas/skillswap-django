@@ -10,11 +10,14 @@
 
     <!-- Usuarios + Estado -->
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="fw-bold mb-0">
-        <i class="fas fa-user me-1 text-muted"></i>{{ deal.usuario_a }}
-        <span class="text-muted mx-2">↔</span>
-        {{ deal.usuario_b }}
-      </h5>
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="fas fa-user me-2 text-muted"></i>
+          <span class="fw-bold {% if theme == 'dark' %}text-light{% else %}text-dark{% endif %}">
+            {{ deal.usuario_a }} ↔ {{ deal.usuario_b }}
+          </span>
+        </div>
+      </div>
       {% if deal.estado == "PROPUESTO" %}
         <span class="badge bg-warning text-dark">{{ deal.estado }}</span>
       {% elif deal.estado == "ACEPTADO" %}
