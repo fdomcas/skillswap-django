@@ -55,9 +55,9 @@ class ModeradorOAdminMixin(AccessMixin):
         if not user.is_authenticated:
             return self.handle_no_permission()
         if not (user.is_staff or user.groups.filter(name='Moderador').exists()):
-            messages.error(request, 'No tienes permisos para acceder a esta página.')
-            return redirect('core:home')
+            raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
+
 
 class HomeView(ListView):
     """
@@ -338,7 +338,6 @@ class CustomRegisterView(CreateView):
         302
         """
         user = form.save()
-        Perfil.objects.create(usuario=user)
         user_group, created = Group.objects.get_or_create(name='Usuario')
         user.groups.add(user_group)
         login(self.request, user)
@@ -528,7 +527,8 @@ class DealsUpdateStartView(LoginRequiredMixin,AcuerdoUpdateParticipant ,View):
         return redirect('core:deals')
 
 
-class DealsDetailView(DetailView):
+
+class DealsDetailView(LoginRequiredMixin,AcuerdoUpdateParticipant ,DetailView):
     model = Acuerdo
     context_object_name = 'deal'
     template_name = 'core/dealsDetail.html'
