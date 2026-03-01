@@ -70,21 +70,6 @@
                             {% endif %}
                         </form>
 
-                        <!-- Botón cambiar idioma -->
-                        <form method="post" action="{% url 'core:change_preference'%}" style="display: inline;">
-                            {% csrf_token %}
-                            {% if lang == 'es' %}
-                                <input type="hidden" name="lang" value="en">
-                                <button type="submit" class="btn btn-outline-light btn-sm" title="Switch to English">
-                                    EN
-                                </button>
-                            {% else %}
-                                <input type="hidden" name="lang" value="es">
-                                <button type="submit" class="btn btn-outline-light btn-sm" title="Cambiar a Español">
-                                    ES
-                                </button>
-                            {% endif %}
-                        </form>
                     </li>
 
                     {% if user.is_authenticated %}
