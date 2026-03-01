@@ -29,18 +29,6 @@ from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
 
-
-
-
-class AutororOModerarorMixin:
-    class AutorOModeradorMixin:
-        def dispatch(self, request, *args, **kwargs):
-            obj = self.get_object()
-            if obj.autor != request.user and not request.user.is_staff:
-                raise PermissionDenied
-            return super().dispatch(request, *args, **kwargs)
-
-
 class AcuerdoUpdateParticipant:
     class ParticipanteAcuerdoMixin:
         def dispatch(self, request, *args, **kwargs):
@@ -252,7 +240,7 @@ class CustomLogin(LoginView):
             user = Usuario.objects.get(username=username)
             if not user.is_active:
                 messages.error(self.request, 'Tu cuenta ha sido baneada. Contacta con el administrador.')
-                form.errors.clear()  # <-- limpia el error del formulario
+                form.errors.clear()  # <-- Cleans form error
         except Usuario.DoesNotExist:
             pass
         return super().form_invalid(form)
