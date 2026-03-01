@@ -6,8 +6,6 @@
 
 **A collaborative platform for exchanging skills and knowledge**
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [Workflow](#-workflow) • [Traceability Map](#-traceability-map)
-
 </div>
 
 ---
@@ -23,7 +21,6 @@
 - [Project Structure](#-project-structure)
 - [Workflow](#-workflow)
 - [Traceability Map](#-traceability-map)
-- [Development Team](#-development-team)
 
 ---
 
@@ -52,14 +49,13 @@ The platform enables users to:
 - 💾 **Persistent Filters** — Search state is stored in the session and restored on the next visit; cleared with one click
 - 👤 **User Profiles** — Bio, timezone, availability, and a personal skill list; profile is auto-created on registration via a Django signal
 - 🤝 **Agreements (Deals)** — Propose a skill-swap agreement directly from a post detail page with configurable weeks, session duration, and conditions; full status lifecycle: `PROPUESTO → ACEPTADO → EN CURSO → FINALIZADO / CANCELADO`
-- 📅 **Sessions** — Create and view sessions linked to an ongoing agreement, recording date, actual duration, attendance, and a summary
+- 📅 **Sessions** — Schedule sessions linked to an ongoing agreement with a specific date and time; a Jitsi Meet video-call link is automatically generated on creation and becomes active only during the session window; summary and attendance are filled in afterwards
 - 📊 **Statistics Dashboard** — Restricted to moderators and admins; aggregated metrics on posts, agreements, sessions, and users
 - 🎨 **Theme Switching** — Light / Dark mode toggle stored in a cookie (1-year expiry)
 - 🌍 **Language Switching** — ES / EN toggle stored in a cookie (1-year expiry)
 - 🛡️ **Anti-Spam Middleware** — Blocks more than 3 post creations per user within 24 hours
 - 🔌 **REST API** — Full CRUD endpoints for `Usuario`, `Publicacion`, `Acuerdo`, and `Sesion`; restricted to admin users; auto-documented with Swagger UI at `/api/docs/`
 
-> ⚠️ **Note**: The API for scheduling and joining video meetings is not yet integrated. All other features are fully operational.
 
 ---
 
@@ -77,6 +73,7 @@ The platform enables users to:
 | API Docs | drf-spectacular ≥ 0.27 |
 | Email Validation | disposable-email-domains |
 | Env Management | python-dotenv ≥ 1.0 |
+| Video Calls | Jitsi Meet (self-hosted) |
 
 ### Frontend
 - **HTML5** & **CSS3**
@@ -313,7 +310,10 @@ After running `populate_test_data`, **20 test users** are available. Every test 
 
 #### Sessions
 - Sessions can only be created while the agreement is `EN CURSO`
-- Each session records the date, actual duration (60–240 min), a summary, and attendance for both users
+- When creating a session, set the **date**, **time**, and **planned duration** (60–240 min)
+- A **Jitsi Meet video-call link** is automatically generated and saved to the session on creation
+- The join button becomes active only during the session window (between start time and end time); before that it shows as disabled
+- Once the session has passed, either participant can fill in the **summary and attendance** via the edit form
 - All your sessions are listed at `/sessions/`
 
 #### Theme & Language
@@ -342,6 +342,8 @@ skillswap-django/
 │   │   └── populate_test_data.py   # Idempotent DB seeder (20 users, 36 skills, posts, deals, sessions)
 │   ├── middleware/
 │   │   └── anti_spam.py            # Limits post creation to 3 per 24 h per user
+│   ├── services/
+│   │   └── meet.py                 # Generates unique Jitsi Meet room URLs (UUID-based)
 │   ├── migrations/                  # Database migrations
 │   ├── static/imgs/                 # App-level static files
 │   ├── templates/core/
@@ -356,9 +358,10 @@ skillswap-django/
 │   │   ├── dealsCreate.html        # Propose agreement form
 │   │   ├── dealslist.html          # List of user's agreements
 │   │   ├── dealsDetail.html        # Agreement detail + session creation
-│   │   ├── sesioneslist.html       # List of user's sessions
-│   │   ├── sesionCreate.html       # Create session form
-│   │   ├── sesion_detail.html      # Session detail view
+│   │   ├── sesioneslist.html       # List of user's sessions (with live Join button)
+│   │   ├── sesionCreate.html       # Create session form (date, time, duration)
+│   │   ├── sesion_detail.html      # Session detail view with Jitsi link + attendance
+│   │   ├── sesion_edit.html        # Edit session after it ends (summary + attendance)
 │   │   └── statistics.html         # Admin/Moderator statistics dashboard
 │   ├── admin.py                    # Django admin (ban/unban actions)
 │   ├── apps.py
@@ -610,8 +613,22 @@ This section maps each technical requirement to the exact file(s) where it is im
 | Post creation — validate skill ownership for OFREZCO | `PostCreate.clean()` | `core/forms.py` |
 | Agreement — validate participant has required skill | `DealsPost.clean()` | `core/forms.py` |
 | Session — only creatable on `EN CURSO` agreements | `Sesion.clean()` | `core/models.py` |
+| Session creation form (date, time, duration only) | `SesionCreateForm` | `core/forms.py` |
+| Session edit form (summary + attendance after session ends) | `SesionEditForm` | `core/forms.py` |
 | Profile skill update (free-text comma input) | `ProfileForm.save()` — `get_or_create` per comma-split token | `core/forms.py` |
 | Duplicate agreement prevention | `IntegrityError` caught in `DealsCreateView.form_valid()` | `core/views.py` |
+
+### Video Calls (Jitsi Meet)
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Unique Jitsi Meet room URL generation | `create_meet_link()` — UUID-based room name under self-hosted domain | `core/services/meet.py` |
+| `meet_link` stored on the session model | `meet_link = models.URLField(blank=True, null=True)` | `core/models.py` |
+| Link auto-generated on session creation | `SesionCreateView.form_valid()` — calls `create_meet_link()` and saves | `core/views.py` |
+| Session status property (upcoming / ongoing / finished) | `Sesion.ha_finalizado` — compares `fecha + hora + duracion_real` against `now()` | `core/models.py` |
+| Join button active only during session window | Template conditional on `session.ha_finalizado == 'ongoing'` | `core/templates/core/sesion_detail.html`, `sesioneslist.html` |
+| Disabled join button before session starts | Template conditional on `session.ha_finalizado == 'upcoming'` | `core/templates/core/sesion_detail.html`, `sesioneslist.html` |
+| Fill in summary & attendance after session | `SesionEditView` + `SesionEditForm` at `sessions/<pk>/edit/` | `core/views.py`, `core/forms.py` |
 
 ### Middleware
 
@@ -642,24 +659,7 @@ This section maps each technical requirement to the exact file(s) where it is im
 | Cloudflare Tunnel (optional) | `tunnel` service with `profiles: [production]` | `docker-compose.yml` |
 | Idempotent test data seeder | `populate_test_data` command using `get_or_create` | `core/management/commands/populate_test_data.py` |
 
----
-
-## 📚 Resources
-
-- [Django Documentation](https://docs.djangoproject.com/en/6.0/)
-- [Django REST Framework](https://www.django-rest-framework.org/)
-- [drf-spectacular](https://drf-spectacular.readthedocs.io/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Documentation](https://docs.docker.com/)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [Git Branching Workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
 
 ---
 
-## 👥 Development Team
-
-| Name | GitHub | Role |
-|------|--------|------|
-| José Antonio Hernández Humanes | jherhum1702 | Project Lead · Data & ORM Layer |
-| Fabián Domínguez Casado | fdomcas | Workflows & Security |
-| Andrés Mahindo Canalo | amahcan562-ies | Infrastructure & Documentation |
+Made by José Antonio Hernández Humanes, Fabián Domínguez Casado and Andrés Mahindo Canalo.
