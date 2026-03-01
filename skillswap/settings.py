@@ -146,3 +146,14 @@ AUTH_USER_MODEL= 'core.Usuario'
 
 LOGOUT_REDIRECT_URL='core:home'
 LOGIN_REDIRECT_URL = 'core:home'
+
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'sskillswap@gmail.com'  # tu Gmail
+EMAIL_HOST_PASSWORD = 'wqdo mwkm balh kmha'  # la clave de 16 caracteres SIN espacios
+DEFAULT_FROM_EMAIL = 'sskillswap@gmail.com'

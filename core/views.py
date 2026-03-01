@@ -19,12 +19,11 @@ from django.views.generic import CreateView, ListView, DetailView, UpdateView, T
 from .forms import *
 from django.views.decorators.http import require_http_methods
 from .session_manager import SessionManager
-
 from rest_framework import viewsets
-
 from .serializers import *
-
 from rest_framework.permissions import IsAdminUser
+from django.core.mail import send_mail
+import random
 
 
 class AutorOModeradorMixin:
@@ -273,69 +272,79 @@ class CustomLogin(LoginView):
 
 class CustomRegisterView(CreateView):
     """
-    Custom registration view for the SkillSwap platform.
-
-    Parameters
-    ----------
-    form_class : CustomUserCreationForm
-        Custom form that handles user registration with alias and email validation.
-    template_name : str
-        Path to the template used to render the registration form.
-    success_url : str
-        URL to redirect to after successful registration.
-
-    Methods
-    -------
-    form_valid(form)
-        Saves the user, assigns them to the 'Usuario' group, and logs them in.
-
-    Examples
-    --------
-    URL config::
-
-        path('accounts/register/', CustomRegisterView.as_view(), name='registro'),
-
-    Template usage::
-
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Registrarse</button>
-        </form>
+    Vista de registro: guarda los datos en sesión y envía un código de verificación por email.
+    No crea el usuario hasta que el código sea verificado.
     """
     form_class = CustomUserCreationForm
     template_name = 'registration/registration.html'
-    success_url = reverse_lazy('core:home')
 
     def form_valid(self, form):
-        """
-        Handle valid form submission.
+        self.request.session['registro_pendiente'] = {
+            'username':   form.cleaned_data['username'],
+            'first_name': form.cleaned_data['first_name'],
+            'last_name':  form.cleaned_data['last_name'],
+            'email':      form.cleaned_data['email'],
+            'password':   form.cleaned_data['password1'],
+        }
 
-        Saves the new user, assigns them to the default 'Usuario' group,
-        and automatically logs them in after registration.
+        # Generar código de 6 dígitos y guardarlo en sesión
+        codigo = str(random.randint(100000, 999999))
+        self.request.session['codigo_verificacion'] = codigo
 
-        Parameters
-        ----------
-        form : CustomUserCreationForm
-            The validated registration form instance.
+        send_mail(
+            subject='Verifica tu cuenta en SkillSwap',
+            message=f'Tu código de verificación es: {codigo}\n\nEste código expira cuando cierres el navegador.',
+            from_email=None,
+            recipient_list=[form.cleaned_data['email']],
+        )
 
-        Returns
-        -------
-        HttpResponseRedirect
-            Redirects to success_url after saving and logging in the user.
+        return redirect('core:verificar-email')
 
-        Examples
-        --------
-        >>> view = CustomRegisterView()
-        >>> response = view.form_valid(valid_form)
-        >>> response.status_code
-        302
-        """
-        user = form.save()
-        user_group, created = Group.objects.get_or_create(name='Usuario')
+    def form_invalid(self, form):
+        return super().form_invalid(form)
+
+
+class VerificarEmailView(View):
+    """
+    Vista para introducir el código de verificación recibido por email.
+    Si el código es correcto, crea el usuario y lo loguea.
+    """
+    template_name = 'registration/verificar_email.html'
+
+    def get(self, request):
+        if 'registro_pendiente' not in request.session:
+            return redirect('core:registro')
+        return render(request, self.template_name)
+
+    def post(self, request):
+        codigo_introducido = request.POST.get('codigo', '').strip()
+        codigo_correcto    = request.session.get('codigo_verificacion')
+        datos              = request.session.get('registro_pendiente')
+
+        if not datos or not codigo_correcto:
+            messages.error(request, 'La sesión ha expirado. Por favor, regístrate de nuevo.')
+            return redirect('core:registro')
+
+        if codigo_introducido != codigo_correcto:
+            messages.error(request, 'Código incorrecto. Inténtalo de nuevo.')
+            return render(request, self.template_name)
+
+        user = Usuario.objects.create_user(
+            username=datos['username'],
+            first_name=datos['first_name'],
+            last_name=datos['last_name'],
+            email=datos['email'],
+            password=datos['password'],
+        )
+        user_group, _ = Group.objects.get_or_create(name='Usuario')
         user.groups.add(user_group)
-        login(self.request, user)
-        return super().form_valid(form)
+
+        del request.session['registro_pendiente']
+        del request.session['codigo_verificacion']
+
+        login(request, user)
+        messages.success(request, '¡Cuenta verificada y creada correctamente!')
+        return redirect('core:home')
 
 class ProfileView(DetailView):
     model = Perfil

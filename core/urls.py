@@ -38,4 +38,5 @@ urlpatterns = [
     path('sessions/<int:pk>/', SesionDetailView.as_view(), name='session-detail'),
     path('sessions/', SesionLisView.as_view(), name='sessions'),
     path('api/', include(router.urls)),
+    path('accounts/verify-email/', VerificarEmailView.as_view(), name='verificar-email'),
 ]
