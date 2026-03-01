@@ -1,5 +1,5 @@
 from symtable import Class
-
+from core.forms import SesionCreateForm, SesionEditForm
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
@@ -24,6 +24,7 @@ from .serializers import *
 from rest_framework.permissions import IsAdminUser
 from django.core.mail import send_mail
 import random
+from core.services.meet import create_meet_link
 
 
 class AutorOModeradorMixin:
@@ -624,7 +625,7 @@ class PostCloseView(LoginRequiredMixin,AutorOModeradorMixin,View):
 
 class SesionCreateView(CreateView):
     model = Sesion
-    form_class = SesionCreate
+    form_class = SesionCreateForm
     template_name = 'core/sesionCreate.html'
 
     def get_acuerdo(self):
@@ -644,8 +645,15 @@ class SesionCreateView(CreateView):
         return context
 
     def form_valid(self, form):
-        form.instance.acuerdo = self.get_acuerdo()  # <- este cambio
-        return super().form_valid(form)
+        acuerdo = self.get_acuerdo()
+        form.instance.acuerdo = acuerdo
+        response = super().form_valid(form)
+
+        meet_link = create_meet_link()
+        self.object.meet_link = meet_link
+        self.object.save(update_fields=['meet_link'])
+
+        return response
 
 class SesionDetailView(DetailView):
     model = Sesion
@@ -654,6 +662,23 @@ class SesionDetailView(DetailView):
     context_object_name = 'session'
 
 
+class SesionEditView(UpdateView):
+    model = Sesion
+    form_class = SesionEditForm
+    template_name = 'core/sesion_edit.html'
+    context_object_name = 'session'
+
+    def get_success_url(self):
+        return reverse_lazy('core:session-detail', kwargs={'pk': self.object.pk})
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        sesion = self.get_object()
+        kwargs.update({
+            'user_a': sesion.acuerdo.usuario_a,
+            'user_b': sesion.acuerdo.usuario_b,
+        })
+        return kwargs
 
 
 

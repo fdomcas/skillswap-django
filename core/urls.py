@@ -1,5 +1,4 @@
 from django.contrib.auth.views import LogoutView
-from django.db import router
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -38,5 +37,6 @@ urlpatterns = [
     path('sessions/<int:pk>/', SesionDetailView.as_view(), name='session-detail'),
     path('sessions/', SesionLisView.as_view(), name='sessions'),
     path('api/', include(router.urls)),
+    path('sessions/<int:pk>/edit/', SesionEditView.as_view(), name='session-edit'),
     path('accounts/verify-email/', VerificarEmailView.as_view(), name='verificar-email'),
 ]

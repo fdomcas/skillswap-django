@@ -9,7 +9,8 @@ from django.db import models
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils import timezone
+from datetime import datetime, timedelta
 # Create your models here.
 
 class Habilidad(models.Model):
@@ -493,8 +494,10 @@ class Sesion(models.Model):
     """
 
     fecha = models.DateField(validators=[validate_date_today_or_later])
+    hora = models.TimeField()
+    meet_link = models.URLField(blank=True, null=True)
     duracion_real = models.PositiveIntegerField(default=60, validators=[MinValueValidator(60), MaxValueValidator(240)])  # Minutes of actual session duration
-    resumen = models.CharField(max_length=200)
+    resumen = models.CharField(max_length=200, blank=True, null=True)
     asistencia_user_a = models.BooleanField(default=False)
     asistencia_user_b = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)     # True if Active, otherwise False. Python is faster checking for a boolean rather than a string
@@ -503,6 +506,21 @@ class Sesion(models.Model):
 
     def __str__(self):
         return f"{self.fecha}, {self.acuerdo}"
+
+    @property
+    def ha_finalizado(self):
+        tz = timezone.get_current_timezone()
+        start = datetime.combine(self.fecha, self.hora)
+        start = timezone.make_aware(start, tz)
+        end = start + timedelta(minutes=self.duracion_real)
+        now = timezone.now()
+
+        if now < start:
+            return 'upcoming'
+        elif now < end:
+            return 'ongoing'
+        else:
+            return 'finished'
 
     def clean(self):
         """

@@ -299,8 +299,8 @@ class CustomloginForm(AuthenticationForm):
         return self.cleaned_data
 
 class ProfileForm(forms.ModelForm):
-    def __init__(self, args, **kwargs):
-        super().__init__(args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.instance.pk:
             habilidades_actuales = self.instance.habilidades.values_list('nombre', flat=True)
             self.fields['habilidades_nuevas'].initial = ', '.join(habilidades_actuales)
@@ -463,7 +463,8 @@ class PostCreate(forms.ModelForm):
 
 
 
-class SesionCreate(forms.ModelForm):
+class SesionCreateForm(forms.ModelForm):
+    """Form para crear una sesión (solo datos de planificación)"""
     def __init__(self, *args, acuerdo=None, **kwargs):
         super().__init__(*args, **kwargs)
         if acuerdo:
@@ -471,11 +472,29 @@ class SesionCreate(forms.ModelForm):
 
     class Meta:
         model = Sesion
-        fields = ['fecha', 'duracion_real', 'resumen', 'asistencia_user_a', 'asistencia_user_b']
+        fields = ['fecha', 'hora', 'duracion_real']
         widgets = {
             'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'duracion_real': forms.NumberInput(attrs={'class': 'form-control'}),
-            'resumen': forms.Textarea(attrs={'class': 'form-control','rows':3}),
+        }
+
+
+class SesionEditForm(forms.ModelForm):
+    """Form para editar una sesión después de que haya ocurrido"""
+
+    def __init__(self, *args, user_a=None, user_b=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user_a:
+            self.fields['asistencia_user_a'].label = f'¿Asistió {str(user_a)}?'
+        if user_b:
+            self.fields['asistencia_user_b'].label = f'¿Asistió {str(user_b)}?'
+
+    class Meta:
+        model = Sesion
+        fields = ['resumen', 'asistencia_user_a', 'asistencia_user_b']
+        widgets = {
+            'resumen': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'asistencia_user_a': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'asistencia_user_b': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
