@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![SkillSwap Logo](./core/static/imgs/sadcat.gif)
+![SkillSwap Logo](./staticfiles/imgs/logo.png)
 
 **Una plataforma colaborativa para intercambiar habilidades y conocimiento.**
 

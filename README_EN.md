@@ -6,21 +6,24 @@
 
 **A collaborative platform for exchanging skills and knowledge**
 
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [Workflow](#-workflow) • [Traceability Map](#-traceability-map)
+
 </div>
 
 ---
 
 ## 📋 Table of Contents
 
-- [About](#about)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Workflow](#workflow)
-- [Development Team](#development-team)
+- [About](#-about)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [Workflow](#-workflow)
+- [Traceability Map](#-traceability-map)
+- [Development Team](#-development-team)
 
 ---
 
@@ -30,84 +33,73 @@
 
 The platform enables users to:
 - Create posts offering or requesting specific skills
-- Search and filter available skills and users
-- Manage their user profile with preferences and interests
-- Reach agreements for skill exchange and track their status
-- Maintain persistent search preferences and filters across cookies & sessions
-
-### 👥 Team Roles
-
-This project was developed collaboratively with clear role separation:
-
-**Data & ORM Layer** (*José Antonio Hernández Humanes*)
-- Models, relations, restrictions, and migrations
-- Functionalities that require Q/F/annotate/aggregate and optimization with select/prefetch
-- Middleware for SPAM protection and session management
-
-**Workflows & Security** (*Fabián Domínguez Casado*)
-- Custom user model, group permissions, and access rules.
-- Flows for creating posts, agreements, follow up and form validation.
-
-**Infrastructure & Documentation** (*Andrés Mahindo Canalo*)
-- Docker containerization, PostgreSQL setup, and environment variables.
-- Cookie-based user preferences and Session-based state persistence.
-- Complete project documentation and traceability map.
+- Search and filter available posts with persistent session-based filters
+- Manage a customizable user profile with skills, bio, timezone, and availability
+- Propose, accept, and manage skill-exchange agreements through a full lifecycle
+- Schedule and track sessions within each agreement
+- Maintain theme (light/dark) and language (ES/EN) preferences via cookies (set via POST forms)
+- Access a REST API (admin-restricted) for all core resources
 
 ---
 
 ## ✨ Features
 
 ### Core Features
-- 🔐 **User Authentication**: Secure registration and login system
-- 💬 **Skill Exchange**: Create posts to offer or request skills
-- 🔍 **Filtering**: Filter by skill name and user preference
-- 👤 **User Profiles**: Customizable user profiles with habilities and timezone setting
-- 🎨 **Customization**: Cookie based theme and language preferences
-- 🤝 **Agreements**: Section to manage skill exchange agreements and their status
-- 🛡️ **Anti-Spam Protection**: Middleware to prevent spam attacks
-- 💾 **Session Management**: Persistent filters and preferences
+- 🔐 **User Authentication** — Secure registration and login supporting username *or* e-mail, with disposable-email domain blocking
+- 🚫 **Account Banning** — Admins can ban/unban users; banned users see a clear error message on login
+- 💬 **Skill Posts** — Create posts of type *OFREZCO* (I offer) or *BUSCO* (I'm looking for), each linked to a specific skill
+- 🔍 **Smart Search & Filtering** — Natural-language search supporting queries like `busco python`, `ofrezco django y busco react`, etc.
+- 💾 **Persistent Filters** — Search state is stored in the session and restored on the next visit; cleared with one click
+- 👤 **User Profiles** — Bio, timezone, availability, and a personal skill list; profile is auto-created on registration via a Django signal
+- 🤝 **Agreements (Deals)** — Propose a skill-swap agreement directly from a post detail page with configurable weeks, session duration, and conditions; full status lifecycle: `PROPUESTO → ACEPTADO → EN CURSO → FINALIZADO / CANCELADO`
+- 📅 **Sessions** — Create and view sessions linked to an ongoing agreement, recording date, actual duration, attendance, and a summary
+- 📊 **Statistics Dashboard** — Restricted to moderators and admins; aggregated metrics on posts, agreements, sessions, and users
+- 🎨 **Theme Switching** — Light / Dark mode toggle stored in a cookie (1-year expiry)
+- 🌍 **Language Switching** — ES / EN toggle stored in a cookie (1-year expiry)
+- 🛡️ **Anti-Spam Middleware** — Blocks more than 3 post creations per user within 24 hours
+- 🔌 **REST API** — Full CRUD endpoints for `Usuario`, `Publicacion`, `Acuerdo`, and `Sesion`; restricted to admin users; auto-documented with Swagger UI at `/api/docs/`
 
+> ⚠️ **Note**: The API for scheduling and joining video meetings is not yet integrated. All other features are fully operational.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework**: Django 6.0.2
-- **Language**: Python 3.14
-- **Database**: PostgreSQL 16
-- **Server**: Gunicorn
-- **Static Files**: WhiteNoise 6.7.0
+| Component | Technology |
+|-----------|------------|
+| Framework | Django 6.0.2 |
+| Language | Python 3.14 |
+| Database | PostgreSQL 16 |
+| WSGI Server | Gunicorn |
+| Static Files | WhiteNoise 6.7.0 |
+| REST API | Django REST Framework ≥ 3.14 |
+| API Docs | drf-spectacular ≥ 0.27 |
+| Email Validation | disposable-email-domains |
+| Env Management | python-dotenv ≥ 1.0 |
 
 ### Frontend
 - **HTML5** & **CSS3**
-- **Bootstrap 5** (responsive components)
-- **JavaScript** (vanilla, for theme/language switching)
+- **Bootstrap 5** (responsive grid, modals, and components)
+- **JavaScript (Vanilla)** — dynamic skill filtering, toast notifications, Bootstrap modals, history navigation
 
 ### DevOps
-- **Containerization**: Docker & Docker Compose
-- **Tunneling**: Cloudflare Tunnel
-- **Package Management**: pip, requirements.txt
-
-### Development Tools
-- **Version Control**: Git & GitHub
-- **Email Validation**: disposable-email-domains
+- **Docker** & **Docker Compose**
+- **Cloudflare Tunnel** (optional, production only)
+- **pip** / `requirements.txt`
 
 ---
 
 ## 📦 Installation
 
 ### Prerequisites
-Before you begin, ensure you have installed:
-- **Docker** and **Docker Compose** (recommended for production)
-- **Python 3.14+**
-- **PostgreSQL 16+** (if running locally without Docker)
+- **Docker** and **Docker Compose** — recommended for the quickest start
+- **Python 3.14+** and **PostgreSQL 16+** — if running locally without Docker
 - **Git**
 
 ### 1. Clone the Repository
 
 ```bash
-# Clone from your fork
 git clone https://github.com/amahcan562-ies/skillswap-django.git
 cd skillswap-django
 
@@ -115,35 +107,33 @@ cd skillswap-django
 git remote add upstream https://github.com/jherhum1702/skillswap-django.git
 ```
 
-### 2. Create Environment File
-
-Copy the example environment file and configure it:
+### 2. Create the Environment File
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration:
+Edit `.env` with your values:
 
 ```dotenv
-# Database Configuration
+# Database
 DB_NAME=skillswap_db
 DB_USER=django_user
 DB_PASSWORD=your_secure_password
-DB_HOST=localhost
+DB_HOST=localhost        # use "db" when running with Docker
 DB_PORT=5432
 
-# Django Settings
+# Django
 SECRET_KEY=your_django_secret_key_here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
 
-# Cloudflare Tunnel (optional, for production)
+# Cloudflare Tunnel (optional — production only)
 TUNNEL_TOKEN=your_tunnel_token_here
 ```
 
-**Generate a Django SECRET_KEY** if you don't have one:
+Generate a `SECRET_KEY` if you don't have one:
 
 ```bash
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
@@ -151,49 +141,49 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 ---
 
-## 🐳 Setup with Docker (Recommended)
-
-### Quick Start
+## 🐳 Docker Setup (Recommended)
 
 ```bash
-# Start all services
+# Start all services (web + PostgreSQL)
 docker compose up -d
-
-# Stop services
-docker compose down
 
 # View logs
 docker compose logs -f web
+
+# Stop services
+docker compose down
 ```
 
-The application will be available at `http://localhost:8000`
+The application will be available at **http://localhost:8000**.
 
-The Docker setup automatically:
-- Creates the PostgreSQL database
-- Runs migrations
-- Populates test data
-- Collects static files
-- Starts the Gunicorn server
+Docker automatically:
+1. Applies all migrations (`python manage.py migrate`)
+2. Populates test data (`python manage.py populate_test_data`)
+3. Collects static files
+4. Starts Gunicorn on port 8000
 
-### Database Commands
+**Useful Docker commands:**
 
 ```bash
-# Access database shell inside Docker
+# Access the database shell
 docker compose exec db psql -U django_user -d skillswap_db
 
-# View Django logs
-docker compose logs web -f
+# Run any Django management command
+docker compose exec web python manage.py <command>
+
+# Full reset (removes the database volume)
+docker compose down -v && docker compose up -d
 ```
 
 ---
 
 ## 🖥️ Local Development Setup
 
-### 1. Create Virtual Environment
+### 1. Create a Virtual Environment
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 ```
 
 ### 2. Install Dependencies
@@ -202,13 +192,12 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure PostgreSQL Locally
+### 3. Configure PostgreSQL
 
-```bash
-# On Linux/Mac
+```sql
+-- Connect as the postgres superuser
 sudo -u postgres psql
 
-# Create database
 CREATE DATABASE skillswap_db;
 CREATE USER django_user WITH PASSWORD 'your_password';
 ALTER ROLE django_user SET client_encoding TO 'utf8';
@@ -231,11 +220,13 @@ python manage.py migrate
 python manage.py populate_test_data
 ```
 
-### 6. Create Superuser
+### 6. Create a Superuser
 
 ```bash
 python manage.py createsuperuser
 ```
+
+> A superuser is required to access `/admin/` and the REST API endpoints at `/api/`.
 
 ### 7. Collect Static Files
 
@@ -243,13 +234,102 @@ python manage.py createsuperuser
 python manage.py collectstatic --noinput
 ```
 
-### 8. Run Development Server
+### 8. Start the Development Server
 
 ```bash
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Access the application at `http://localhost:8000`
+Visit **http://localhost:8000**.
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `DB_NAME` | PostgreSQL database name | `skillswap_db` |
+| `DB_USER` | PostgreSQL user | `django_user` |
+| `DB_PASSWORD` | PostgreSQL password | `secure_password` |
+| `DB_HOST` | Database host | `localhost` / `db` (Docker) |
+| `DB_PORT` | Database port | `5432` |
+| `DEBUG` | Django debug mode | `True` (dev only) |
+| `SECRET_KEY` | Django secret key | Generated value |
+| `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
+| `CSRF_TRUSTED_ORIGINS` | CSRF-safe origins (with scheme) | `http://localhost:8000` |
+| `TUNNEL_TOKEN` | Cloudflare Tunnel token | Your token |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `skillswap/settings.py` | Main Django settings |
+| `skillswap/urls.py` | Project-level URL routing + API doc routes |
+| `core/urls.py` | App-level URL routing and DRF router |
+| `core/context_processors.py` | Cookie preferences injected into every template |
+| `core/session_manager.py` | Session-based search filter helpers |
+| `core/middleware/anti_spam.py` | Spam protection middleware |
+| `core/serializers.py` | DRF serializers for the REST API |
+| `.env` | Local environment variables (never commit) |
+
+---
+
+## 🚀 Usage
+
+### Test Credentials
+
+After running `populate_test_data`, **20 test users** are available. Every test user has the password **`1234`**. A few notable ones:
+
+| Username | Name | Description |
+|----------|------|-------------|
+| `pacogamer30` | Paco Tester | Gaming & programming learner |
+| `anadev` | Ana López | Frontend developer |
+| `laurasan` | Laura Sánchez | English teacher learning programming |
+| `carlosdev` | Carlos Ruiz | Backend developer (Django / Docker) |
+| `sofiahm` | Sofía Hernández | UX/UI designer |
+
+> To access **`/admin/`** or the **REST API**, you need a superuser created with `python manage.py createsuperuser`.
+
+### Feature Guide
+
+#### Search & Filter
+- Type any skill name in the home-page search bar
+- Use prefixes for targeted searches:
+  - `busco python` → BUSCO posts about Python
+  - `ofrezco django` → OFREZCO posts about Django
+  - `busco react y ofrezco javascript` → combined filter
+- Filters are saved in your session and restored on the next visit
+- Click **"Clear filters"** to reset
+
+#### Agreements (Deals)
+1. Open any post detail page (`/posts/<id>`)
+2. Click **"Propose Agreement"** to open the deal creation form
+3. Configure weeks, session duration, sessions per week, and conditions
+4. The post author receives the proposal and can **Accept** it
+5. Once accepted, either participant can **Start** the agreement (→ `EN CURSO`)
+6. From the deal detail page, participants can **create sessions**, **finish**, or **cancel** the agreement
+
+#### Sessions
+- Sessions can only be created while the agreement is `EN CURSO`
+- Each session records the date, actual duration (60–240 min), a summary, and attendance for both users
+- All your sessions are listed at `/sessions/`
+
+#### Theme & Language
+- Use the **☀️/🌙** toggle in the navbar to switch between light and dark mode
+- Use the **EN/ES** toggle to switch the interface language
+- Both preferences are stored in cookies and persist for 1 year
+
+#### Statistics (Moderators / Admins)
+- Visit `/statistics/` — only accessible to staff and users in the `Moderador` group
+- Shows post counts, agreement states, session totals, recent activity, and the moderator list
+
+#### REST API (Admins only)
+- **Base URL**: `/api/`
+- **Resources**: `usuarios`, `publicaciones`, `acuerdos`, `sesiones`
+- **Interactive docs (Swagger UI)**: `/api/docs/`
+- **OpenAPI schema**: `/api/schema/`
 
 ---
 
@@ -257,304 +337,329 @@ Access the application at `http://localhost:8000`
 
 ```
 skillswap-django/
-├── core/                          # Main Django app
-│   ├── management/commands/       # Custom management commands
-│   │   └── populate_test_data.py # Load initial test data
-│   ├── middleware/               # Custom middleware
-│   │   └── anti_spam.py         # SPAM protection middleware
-│   ├── migrations/               # Database migrations
-│   ├── static/                   # App-level static files
-│   │   └── imgs/
-│   ├── templates/                # App-level templates
-│   │   └── core/
-│   │       ├── home.html        # Home page
-│   │       ├── post_list.html   # Posts listing
-│   │       ├── post_detail.html # Post details
-│   │       ├── profile.html     # User profile
-│   │       └── search_results.html # Search results
-│   ├── admin.py                 # Django admin configuration
-│   ├── apps.py                  # App configuration
-│   ├── context_processors.py    # Template context processors (cookies, preferences)
-│   ├── forms.py                 # Django forms
-│   ├── models.py                # Database models
-│   ├── session_manager.py       # Session management for filters
-│   ├── urls.py                  # App URL routing
-│   └── views.py                 # View logic
+├── core/                            # Main Django application
+│   ├── management/commands/
+│   │   └── populate_test_data.py   # Idempotent DB seeder (20 users, 36 skills, posts, deals, sessions)
+│   ├── middleware/
+│   │   └── anti_spam.py            # Limits post creation to 3 per 24 h per user
+│   ├── migrations/                  # Database migrations
+│   ├── static/imgs/                 # App-level static files
+│   ├── templates/core/
+│   │   ├── home.html               # Home page with search
+│   │   ├── search_results.html     # Search results
+│   │   ├── post_list.html          # All posts listing
+│   │   ├── post_detail.html        # Single post + agreement proposal button
+│   │   ├── postCreate.html         # Create post form
+│   │   ├── post_update.html        # Edit post form
+│   │   ├── profile.html            # User profile view
+│   │   ├── profile_update.html     # Edit profile form
+│   │   ├── dealsCreate.html        # Propose agreement form
+│   │   ├── dealslist.html          # List of user's agreements
+│   │   ├── dealsDetail.html        # Agreement detail + session creation
+│   │   ├── sesioneslist.html       # List of user's sessions
+│   │   ├── sesionCreate.html       # Create session form
+│   │   ├── sesion_detail.html      # Session detail view
+│   │   └── statistics.html         # Admin/Moderator statistics dashboard
+│   ├── admin.py                    # Django admin (ban/unban actions)
+│   ├── apps.py
+│   ├── context_processors.py       # Reads theme/lang cookies → template context
+│   ├── forms.py                    # All Django forms with validation logic
+│   ├── models.py                   # Habilidad, Usuario, Perfil, Publicacion, Acuerdo, Sesion
+│   ├── serializers.py              # DRF serializers
+│   ├── session_manager.py          # Save/get/clear search filters in session
+│   ├── urls.py                     # All app routes + DRF router
+│   └── views.py                    # All CBVs, FBVs, and DRF ViewSets
 │
-├── skillswap/                    # Django project settings
-│   ├── settings.py              # Project settings
-│   ├── urls.py                  # Project URL routing
-│   ├── asgi.py                  # ASGI configuration
-│   └── wsgi.py                  # WSGI configuration
+├── skillswap/
+│   ├── settings.py                 # Project settings (env-based config)
+│   ├── urls.py                     # Root URL conf + API doc routes
+│   ├── asgi.py
+│   └── wsgi.py
 │
-├── templates/                    # Project-level templates
-│   ├── base.html               # Base template with theme support
-│   └── registration/           # Authentication templates
+├── templates/
+│   ├── base.html                   # Base template with theme, navbar, messages
+│   └── registration/
 │       ├── login.html
 │       └── registration.html
 │
-├── staticfiles/                  # Collected static files (production)
-│   └── admin/                   # Django admin static files
-│
-├── Dockerfile                    # Docker image definition
-├── docker-compose.yml           # Docker Compose configuration
-├── manage.py                    # Django management script
-├── requirements.txt             # Python dependencies
-├── gunicorn.ctl                # Gunicorn control script
-└── README.md                    # This file
+├── staticfiles/                     # Collected static files (production)
+├── locale/                          # i18n translation files (es, en)
+├── Dockerfile
+├── docker-compose.yml
+├── manage.py
+├── requirements.txt
+└── gunicorn.ctl
 ```
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-The `.env` file controls all environment-dependent settings:
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `DB_NAME` | PostgreSQL database name | `skillswap_db` |
-| `DB_USER` | PostgreSQL user | `django_user` |
-| `DB_PASSWORD` | PostgreSQL password | `secure_password` |
-| `DB_HOST` | Database host (localhost or Docker service) | `localhost` or `db` |
-| `DEBUG` | Django debug mode | `True` (development only) |
-| `SECRET_KEY` | Django secret key (keep secure!) | Generated value |
-| `ALLOWED_HOSTS` | Allowed host domains | `localhost,127.0.0.1` |
-| `CSRF_TRUSTED_ORIGINS` | CSRF-safe origins (must have scheme) | `http://localhost:8000` |
-| `TUNNEL_TOKEN` | Cloudflare Tunnel token (optional) | Your token |
-
-### Key Settings Files
-- **`skillswap/settings.py`**: Main Django configuration
-- **`skillswap/urls.py`**: Project-level URL routing
-- **`core/urls.py`**: App-level URL routing and views
-- **`.env.example`**: Template for environment variables (copy and customize)
-
----
-
-## 🚀 Usage
-
-### Default Credentials (Test Data)
-
-After running `populate_test_data`:
-- **Username**: testuser
-- **Password**: testpass123
-
-### Features Guide
-
-#### 1. **Search and Filter**
-- Use the search bar to find skills or users
-- Filters persist in your session automatically
-- Use the "Clear Filters" button to reset
-
-#### 2. **Theme Switching**
-- Click the theme toggle (☀️/🌙) in the navigation bar
-- Your preference is saved as a cookie
-- Preference persists across sessions
-
-#### 3. **Language Selection**
-- Click the language toggle (EN/ES) in the navigation bar
-- Changes interface language dynamically
-- Preference is saved as a cookie
-
-#### 4. **Create a Post**
-- Log in to your account
-- Navigate to create a post
-- Choose "BUSCO" (I'm looking for) or "OFREZCO" (I'm offering)
-- Select a skill and provide details
-- Your post will be visible to other users
-
-#### 5. **User Profile**
-- Visit your profile to view and edit information
-- Set your timezone
-- Manage your skills and interests
 
 ---
 
 ## 📊 Workflow
 
-### Git Strategy Implementation
+### Git Strategy
 
-Our team implemented a **Git Flow workflow** with GitHub collaboration, organizing work through branches, issues, and pull requests.
+The team used a **Git Flow**-inspired workflow with three contributors working across three forks and integrating through a shared upstream repository.
 
 ---
 
-### 1. Branches Used and Integration
+### 1. Branch Structure and Integration
 
 #### Main Branches
-- **`main`**: Production-ready code
-- **`develop`**: Integration branch for features (staging)
+| Branch | Purpose |
+|--------|---------|
+| `main` | Production-ready, stable code |
+| `develop` | Integration branch — all features merge here first |
 
-#### Work Branches
-All work was done in dedicated branches created from `develop`:
+#### Feature and Bugfix Branches
+All work was done in dedicated branches created from `develop` and merged back via Pull Request.
 
-**Features Implemented:**
-| Branch | Feature | Contributors | Status |
-|--------|---------|---------------|--------|
-| `feature/cookies` | Light/Dark theme & Language preferences (cookies) | amahcan562-ies | ✅ Merged (PR #51) |
-| `feature/post_list` | Post listing and display | fdomcas | ✅ Merged (PR #50) |
-| `feature/populate_db` | Database population script | jherhum1702 | ✅ Merged (PR #41) |
-| `feature/home-page` | Home page with search | jherhum1702 | ✅ Merged (PR #53) |
-| `feature/Perfil_usuario` | User profile management | fdomcas | ✅ Merged (PR #56, then reverted & re-implemented #61) |
-| `feature/sessions` | Session-based filter persistence | amahcan562-ies | ✅ Merged |
+**Features:**
+| Branch | Feature | Author | PR |
+|--------|---------|--------|----|
+| `feature/cookies` | Light/Dark theme & language preferences (cookies + context processor) | amahcan562-ies | #51 ✅ |
+| `feature/post_list` | Post listing view and template | fdomcas | #50 ✅ |
+| `feature/populate_db` | Database population management command | jherhum1702 | #41 ✅ |
+| `feature/home-page` | Home page with smart search (Q objects) | jherhum1702 | #53 ✅ |
+| `feature/Perfil_usuario` | User profile view and edit | fdomcas | #56 → reverted #58 → re-implemented #61 ✅ |
+| `feature/sessions` | Session-based search filter persistence (`SessionManager`) | amahcan562-ies | ✅ Merged |
+| `feature/deals` | Full agreements flow — propose, accept, start, finish, cancel | fdomcas | ✅ Merged |
+| `feature/statistics` | Moderator/admin statistics dashboard | jherhum1702 | ✅ Merged |
+| `feature/api` | REST API with DRF + Swagger docs (drf-spectacular) | amahcan562-ies | ✅ Merged |
+| `feature/sessions-model` | Session model, form, views, and templates | jherhum1702 / fdomcas | ✅ Merged |
 
 **Bugfixes:**
-| Branch | Bug Fixed | Contributors | Status |
-|--------|-----------|---------------|--------|
-| `bugfix/urls` | URL routing issues | fdomcas | ✅ Merged (PR #59) |
-| `bugfix/profile-base` | Profile base template fixes | jherhum1702 | ✅ Merged (PR #62) |
-| `bugfix/docker-expose-port` | Docker port exposure (8000:8000) | In progress | 🔄 Feature branch |
-| `bugfix/responsive-buttons-bug` | Mobile responsive button alignment | In progress | 🔄 Feature branch |
+| Branch | Bug Fixed | Author | PR |
+|--------|-----------|--------|----|
+| `bugfix/urls` | URL routing issues after profile merge | fdomcas | #59 ✅ |
+| `bugfix/profile-base` | Profile page missing base template inheritance | jherhum1702 | #62 ✅ |
+| `bugfix/docker-expose-port` | Docker port `8000:8000` not exposed correctly | amahcan562-ies | ✅ Merged |
+| `bugfix/responsive-buttons-bug` | Mobile button alignment in dark mode | amahcan562-ies | ✅ Merged |
 
 #### Integration Process
-1. Each feature/bugfix created a branch from `develop`
-2. Work completed locally with multiple commits
-3. Push to personal fork
-4. Create Pull Request to upstream `develop` branch
-5. After approval → merge into `develop`
-6. Delete feature branch after merge
-7. `develop` branch regularly synced with forks
+1. Branch created from the latest `develop`
+2. Feature implemented locally with descriptive commits
+3. Pushed to personal fork
+4. Pull Request opened targeting upstream `develop`
+5. Reviewed by at least one other team member
+6. Merged after approval; branch deleted
+7. All forks re-synced: `git fetch upstream && git rebase upstream/develop`
 
 ---
 
 ### 2. Issues and Task Distribution
 
-**How Issues Were Organized:**
+GitHub Issues were used to track every unit of work:
 
-We used GitHub Issues to track work with these types:
-- **Feature Requests**: New functionality to build
-- **Bug Reports**: Issues to fix
-- **Documentation**: README and docs updates
+- **Feature Requests** — new functionality to build
+- **Bug Reports** — fixes required
+- **Documentation** — README and inline doc updates
 
-**Task Distribution:**
-| Team Member | Primary Responsibilities | Features/Bugfixes |
-|-------------|--------------------------|-------------------|
-| **jherhum1702** | Project Lead, Backend architecture, Models, Views | Populate DB, Home page, Profile base fixes, More data |
-| **amahcan562-ies** | Full Stack: Frontend styling, Cookies, Sessions | Cookies/Theme/Lang, Session filters, Responsive buttons |
-| **fdomcas** | Frontend & Database features | Post list, User profile, URL bugfixes |
+Issues were assigned based on each member's area of ownership. PRs referenced issues with `Closes #X` in the description, automatically closing them on merge.
 
-**Work Distribution Method:**
-- Issues were created in the GitHub repository
-- Assigned to team members based on expertise
-- Linked to Pull Requests with "Closes #X" comments
-- Progress tracked through PR comments and status updates
+**Responsibility matrix:**
+
+| Team Member | Area | Key Deliverables |
+|-------------|------|-----------------|
+| **jherhum1702** | Backend / Data Layer | Models & migrations, ORM queries, populate command, home search, statistics view, profile template fix |
+| **amahcan562-ies** | Infrastructure / Full Stack | Docker, env vars, cookies, session filters, anti-spam middleware, REST API + Swagger, documentation |
+| **fdomcas** | Workflows / Security | Custom user model, groups & permissions, posts CRUD, agreements flow, session tracking, form validation, login by email |
 
 ---
 
 ### 3. Code Review Process
 
-**Pull Request Review Checklist:**
+Each Pull Request was reviewed against this checklist:
 
-Before merging, each PR was reviewed for:
-- ✅ **Django Best Practices**: Models, views, forms follow conventions
-- ✅ **Database Migrations**: No errors, migrations apply successfully
-- ✅ **Template Safety**: No XSS vulnerabilities, proper template usage
-- ✅ **Code Quality**: Meaningful variable names, documentation
-- ✅ **Functionality**: Feature works as described in PR
-- ✅ **No Breaking Changes**: Backward compatibility maintained
+- ✅ Django best practices followed (CBVs, forms, model methods)
+- ✅ Migrations apply cleanly without errors
+- ✅ No XSS vulnerabilities in templates (auto-escaping enforced)
+- ✅ Access control verified (LoginRequiredMixin, permission mixins, IsAdminUser)
+- ✅ No breaking changes to existing routes or models
+- ✅ Code is readable, documented, and follows project conventions
 
-**Review Workflow:**
-1. Author creates PR with description, key changes, and testing checklist
-2. Team members review code and suggest improvements
-3. Author addresses feedback with additional commits
-4. Approvers verify changes and approve
-5. PR is merged to develop once approved
+**Review workflow:**
+1. Author opens PR with a description and list of changes
+2. At least one teammate reviews and leaves comments if needed
+3. Author pushes fixes as additional commits
+4. PR approved and merged to `develop`
 
-**Example PR (Feature/Cookies):**
+**Example PR message (feature/cookies):**
 ```
-Title: feat(cookies): Dark mode and language preferences
-Description: Implemented cookie-based theme and language preferences
-Key Changes:
-- Added context_processors.py for template variables
-- Created theme toggle and language toggle buttons
-- Implemented CSS for dark mode
-Testing: Migrations apply without errors, theme persists across sessions
-Related Issues: Closes #X
+feat(cookies): Dark mode and language preferences
+
+- Added context_processors.py — injects `theme` and `lang` into every template
+- Cookie set with max_age=365*24*60*60 (1 year)
+- Navbar toggles for ☀️/🌙 and EN/ES
+- Dark mode CSS applied via body class
+
+Testing: migrations apply, theme persists after logout, no JS errors
+Closes #XX
 ```
 
 ---
 
 ### 4. Conflict Resolution
 
-**Conflicts Encountered and Resolution:**
+#### Conflict #1 — `feature/Perfil_usuario`
+- **Problem**: Profile feature was merged (PR #56) but introduced bugs in the base template and URL routing.
+- **Resolution**:
+  - PR #58 reverted the merge to `develop`
+  - Branch rebased against the updated `develop`
+  - Bugs fixed and re-submitted as PR #61 → merged successfully
+- **Lesson**: Always test locally against the latest `develop` before opening a PR.
 
-#### Conflict #1: Feature/Perfil_usuario
-- **Issue**: Profile feature merged, then reverted due to bugs, then re-implemented
-- **Solution**: 
-  - First merge (PR #56) → Reverted (PR #58)
-  - Fixed conflicts by rebasing with develop
-  - Re-implemented with fixes (PR #61) → Successfully merged
-- **Lesson**: Better testing before merging
+#### Conflict #2 — `feature/sessions` vs `bugfix/responsive-buttons-bug`
+- **Problem**: Both branches modified button styles inside `base.html` and template files simultaneously.
+- **Resolution**:
+  - `git fetch upstream && git rebase upstream/develop` on the lagging branch
+  - Conflicts resolved manually in the editor; CSS rules unified
+  - Tested on multiple screen sizes before re-pushing
+- **Prevention**: The team agreed to communicate in advance when touching shared files like `base.html`.
 
-#### Conflict #2: Feature/Sessions vs Bugfix/buttons
-- **Issue**: Two branches modifying button styling simultaneously
-- **Solution**:
-  - Used `git rebase upstream/develop` to sync latest changes
-  - Manually resolved CSS conflicts in templates
-  - Tested responsive design thoroughly
-- **Prevention**: Improved communication about which files each person modifies
-
-#### Resolution Strategy Used:
+#### Standard Resolution Commands
 ```bash
-# When conflicts occurred:
-1. git fetch upstream
-2. git rebase upstream/develop
-3. # Resolve conflicts manually in editor
-4. git add .
-5. git rebase --continue
-6. git push origin branch-name -f
+git fetch upstream
+git rebase upstream/develop
+# Resolve conflicts in your editor
+git add .
+git rebase --continue
+git push origin <branch-name> --force-with-lease
 ```
-
-**Conflict Markers Handled:**
-- Template conflicts in `base.html`
-- CSS styling conflicts in buttons
-- URL routing conflicts in `urls.py`
-
-**Prevention Measures:**
-- Team communicated about areas being modified
-- Small, focused branches to minimize overlap
-- Frequent pulls from upstream develop
-- Regular merges to avoid large divergences
 
 ---
 
-### 5. Communication & Coordination
+### 5. Commit Convention
 
-**Tools Used:**
-- **GitHub Issues**: Feature/bug tracking and assignment
-- **Pull Requests**: Code review and discussion
-- **Commits**: Descriptive messages following conventional commits
-  - `feat:` for features
-  - `fix:` for bugfixes
-  - `docs:` for documentation
-  - `style:` for formatting
+The team followed [Conventional Commits](https://www.conventionalcommits.org/):
 
-**Example Commits:**
+| Prefix | Usage |
+|--------|-------|
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `docs:` | Documentation only |
+| `style:` | Formatting, no logic change |
+| `refactor:` | Code restructuring |
+| `chore:` | Build, config, or tooling change |
+
+**Examples from the project:**
 ```
-- feat: context-processors implementation
-- fix(docker): deleted double ports
-- feat: filter session implemented
-- fix: buttons separated and names in dark mode now appear
+feat: context-processors implementation
+feat: filter session implemented
+feat: REST API with drf-spectacular swagger docs
+feat: statistics view for moderators and admins
+feat: agreements (deals) full lifecycle
+feat: session model, views and templates
+fix(docker): deleted double ports
+fix: buttons separated and names in dark mode now appear
+fix: profile base template inheritance
+docs: complete README update
 ```
+
+---
+
+## 🗺️ Traceability Map
+
+This section maps each technical requirement to the exact file(s) where it is implemented.
+
+### Models & ORM
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Custom user model | `class Usuario(AbstractUser)` | `core/models.py` |
+| Profile auto-created on registration | `@receiver(post_save, sender=Usuario)` signal | `core/models.py` |
+| Many-to-many: profile ↔ skills | `habilidades = ManyToManyField(Habilidad, ...)` | `core/models.py` |
+| Unique constraint on active agreements | `UniqueConstraint(..., condition=Q(estado__in=[...]))` | `core/models.py` |
+| Model-level validation (`clean()`) | `Perfil.clean()`, `Acuerdo.clean()`, `Sesion.clean()` | `core/models.py` |
+| Date validator (today or later) | `validate_date_today_or_later()` | `core/models.py` |
+| Q objects for complex queries | `HomeView.get_queryset()` — combines BUSCO/OFREZCO terms | `core/views.py` |
+| F expressions & annotations | `DealsDetailView.get_queryset()` — `total_mins = F('semanas') * F(...)` | `core/views.py` |
+| `annotate` + `Count` | `PostDetailview.get_object()` — `total_proposals=Count(...)` | `core/views.py` |
+| `select_related` + `prefetch_related` | `HomeView.get_queryset()` — `.select_related(...).prefetch_related(...)` | `core/views.py` |
+| `Case` / `When` for custom ordering | `DealsListView.get_queryset()` — orders deals by status priority | `core/views.py` |
+| Statistics aggregations | `StatisticsView.get_context_data()` — counts, filters, recent slices | `core/views.py` |
+
+### Authentication & Permissions
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Custom registration form with email blocklist | `CustomUserCreationForm` + `clean_email()` | `core/forms.py` |
+| Login by username **or** e-mail | `CustomloginForm.clean()` | `core/forms.py` |
+| User assigned to `Usuario` group on register | `CustomRegisterView.form_valid()` | `core/views.py` |
+| Ban/unban users from admin | `banear_usuarios`, `desbanear_usuarios` actions | `core/admin.py` |
+| Banned user feedback on login | `CustomLogin.form_invalid()` — checks `is_active` | `core/views.py` |
+| Login required for protected views | `LoginRequiredMixin` on all sensitive CBVs | `core/views.py` |
+| Author or moderator only edit/delete | `AutorOModeradorMixin` | `core/views.py` |
+| Agreement participants only | `AcuerdoUpdateParticipant.ParticipanteAcuerdoMixin` | `core/views.py` |
+| Statistics restricted to moderators/admins | `ModeradorOAdminMixin` | `core/views.py` |
+| Admin panel secured redirect | `secure_admin_login()` wrapper | `skillswap/urls.py` |
+
+### Cookies & Sessions
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Theme preference stored in cookie | `change_preference` view — `response.set_cookie('theme', ...)` | `core/views.py` |
+| Language preference stored in cookie | `change_preference` view — `response.set_cookie('lang', ...)` | `core/views.py` |
+| Cookies injected into all templates | `preferences()` context processor | `core/context_processors.py` |
+| Search filters persisted in session | `SessionManager.save_filters()` / `get_filters()` | `core/session_manager.py` |
+| Filters restored on next visit | `HomeView.get_queryset()` — reads session if no GET param | `core/views.py` |
+| Filters cleared on demand | `clear_filters` view + `SessionManager.clear_filters()` | `core/views.py`, `core/session_manager.py` |
+
+### Forms & Validation
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Post creation — validate skill ownership for OFREZCO | `PostCreate.clean()` | `core/forms.py` |
+| Agreement — validate participant has required skill | `DealsPost.clean()` | `core/forms.py` |
+| Session — only creatable on `EN CURSO` agreements | `Sesion.clean()` | `core/models.py` |
+| Profile skill update (free-text comma input) | `ProfileForm.save()` — `get_or_create` per comma-split token | `core/forms.py` |
+| Duplicate agreement prevention | `IntegrityError` caught in `DealsCreateView.form_valid()` | `core/views.py` |
+
+### Middleware
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Anti-spam: max 3 posts per 24 h per user | `SpamMiddleware.__call__()` | `core/middleware/anti_spam.py` |
+
+### REST API
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| ModelViewSet for all core models | `UsuarioViewSet`, `PublicacionViewSet`, `AcuerdoViewSet`, `SesionViewSet` | `core/views.py` |
+| DRF serializers | `UsuarioSerializer`, `PublicacionSerializer`, `AcuerdoSerializer`, `SesionSerializer` | `core/serializers.py` |
+| API restricted to admin users | `permission_classes = [IsAdminUser]` on all ViewSets | `core/views.py` |
+| DRF router registration | `router.register(...)` × 4 + `path('api/', include(router.urls))` | `core/urls.py` |
+| Swagger / OpenAPI auto-documentation | `SpectacularAPIView`, `SpectacularSwaggerView` at `/api/docs/` | `skillswap/urls.py` |
+| API access secured by login redirect | `secure_api_view()` wrapper | `skillswap/urls.py` |
+
+### Infrastructure & Configuration
+
+| Requirement | Implementation | File |
+|-------------|---------------|------|
+| Docker multi-service setup | `docker-compose.yml` (web + db + optional tunnel profile) | `docker-compose.yml` |
+| PostgreSQL configuration | `DATABASES` dict reading from `.env` | `skillswap/settings.py` |
+| Environment-based settings | All secrets via `os.getenv()` + `python-dotenv` | `skillswap/settings.py` |
+| Static files in production | `WhiteNoiseMiddleware` + `STATIC_ROOT` | `skillswap/settings.py` |
+| Gunicorn WSGI server | `gunicorn skillswap.wsgi --bind 0.0.0.0:8000` | `docker-compose.yml` |
+| Cloudflare Tunnel (optional) | `tunnel` service with `profiles: [production]` | `docker-compose.yml` |
+| Idempotent test data seeder | `populate_test_data` command using `get_or_create` | `core/management/commands/populate_test_data.py` |
+
+---
+
+## 📚 Resources
+
+- [Django Documentation](https://docs.djangoproject.com/en/6.0/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [drf-spectacular](https://drf-spectacular.readthedocs.io/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Conventional Commits](https://www.conventionalcommits.org/)
+- [Git Branching Workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
 
 ---
 
 ## 👥 Development Team
 
-This project was developed collaboratively by:
-- **José Antonio Hernández Humanes**
-- **Fabián Domínguez Casado** 
-- **Andrés Mahindo Canalo** 
-
----
-
-
-## 📚  Resources
-
-- [Django Documentation](https://docs.djangoproject.com/en/6.0/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Documentation](https://docs.docker.com/)
-- [Git Workflow Guide](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-
-
-
+| Name | GitHub | Role |
+|------|--------|------|
+| José Antonio Hernández Humanes | jherhum1702 | Project Lead · Data & ORM Layer |
+| Fabián Domínguez Casado | fdomcas | Workflows & Security |
+| Andrés Mahindo Canalo | amahcan562-ies | Infrastructure & Documentation |
