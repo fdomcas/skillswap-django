@@ -6,6 +6,11 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import datetime, timedelta
 # Create your models here.
 
 class Habilidad(models.Model):
@@ -16,21 +21,25 @@ class Habilidad(models.Model):
 
     Attributes:
         nombre (str): Skill name (max 100 characters, unique)
-        categoria (str): Skill category (max 100 characters, unique)
         estado (bool): Represents if your skill is active or not (max 100 characters, unique)
 
     Example:
         >>> habilidad = Habilidad.objects.create(
         ...     nombre="Photoshop",
-        ...     categoria="Software",
         ...     estado=True
         ...     )
         >>> habilidad.save()
     """
     nombre = models.CharField(max_length=100, unique=True)
-    categoria = models.CharField(max_length=100, blank=True)
     estado = models.BooleanField(default=True)
 
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = 'habilidad'
+        verbose_name_plural = 'habilidades'
+        ordering = ['nombre']
 
 class Usuario(AbstractUser):
     """
@@ -39,22 +48,29 @@ class Usuario(AbstractUser):
     Represents a registered user in SkillSwap with auth and profile info.
 
     Attributes:
-        nombre (str): Username (max 100 characters)
-        alias (str): User alias for search (max 16 characters, unique)
+        first_name (str): User's name (max 100 characters)
+        last_name (str): User's last names (max 200 characters)
+        username (str): User username for search (max 16 characters, unique)
         email (str): User email address (Unique)
 
     Example:
         >>> usuario = Usuario.objects.create(
-        ...     nombre="Paco Tester",
-        ...     alias="pacogamer30",
+        ...     first_name="Paco",
+        ...     username="pacogamer30",
         ...     email="pacotest@gmail.com"
         ...     )
         >>> usuario.save()
     """
-    nombre = models.CharField(max_length=100)
-    alias = models.CharField(max_length=16, unique=True) # Represents a user alias (e.g. @JohnPork)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=200, blank=True)
+    username = models.CharField(max_length=16, unique=True) # Represents a user username (e.g. @JohnPork)
     email = models.EmailField(unique=True)
     # is_active - 'Estado' attribute. Python is faster checking for a boolean rather than a string - FROM AbstractUser !!
+
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email", "first_name", 'last_name']
+
+
 
     def __str__(self):
         """
@@ -63,27 +79,27 @@ class Usuario(AbstractUser):
         Args:
             self: User instance
 
-        Format: [nombre] (user's name) - e.g., "Paco Tester"
+        Format: [first_name] [last_name] (user's name) - e.g., "Paco Tester"
 
         Returns:
             str: User's full name.
 
         Example:
             >>> usuario = Usuario.objects.create(
-            ...     nombre="Paco Tester",
-            ...     alias="pacogamer30",
+            ...     first_name="Paco Tester",
+            ...     username="pacogamer30",
             ...     email="pacotest@gmail.com"
             ...     )
             >>> usuario.save()
             >>> print(usuario)
         """
-        return self.nombre
+        return f"{self.first_name} {self.last_name} "
 
     class Meta:
         db_table = 'usuario'
         verbose_name = 'usuario'
         verbose_name_plural = 'usuarios'
-        ordering = ['nombre']
+        ordering = ['first_name', 'last_name']
 
 
 def timezone_choices():
@@ -135,8 +151,8 @@ class Perfil(models.Model):
 
     Example:
         >>> usuario = Usuario.objects.create(
-        ...     nombre="Paco Tester",
-        ...     alias="pacogamer30",
+        ...     first_name="Paco Tester",
+        ...     username="pacogamer30",
         ...     email="pacotest@gmail.com"
         ...     )
         >>> usuario.save()
@@ -150,11 +166,18 @@ class Perfil(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil', related_query_name='perfil')
     biografia = models.CharField(max_length=200, blank=True)
     zona_horaria = models.CharField(max_length=100, choices=timezone_choices(), default='Europe/Madrid')
-    disponibilidad = models.TextField()
+    disponibilidad = models.TextField(default='Add your availability here\nAñade tu disponibilidad aquí')
     preferencias = models.JSONField(default=default_preferencias, blank=True)
 
     habilidades = models.ManyToManyField(Habilidad, blank=True, related_name='perfil', related_query_name='perfil')
 
+    def __str__(self):
+        return f"Perfil de {self.usuario.username}"
+
+    class Meta:
+        verbose_name = 'perfil'
+        verbose_name_plural = 'perfiles'
+        ordering = ('usuario',)
 
     def clean(self):
         """
@@ -173,8 +196,8 @@ class Perfil(models.Model):
 
         Example:
             >>> usuario = Usuario.objects.create(
-            ...     nombre="Paco Tester",
-            ...     alias="pacogamer30",
+            ...     first_name="Paco Tester",
+            ...     username="pacogamer30",
             ...     email="pacotest@gmail.com"
             ...     )
             >>> usuario.save()
@@ -217,14 +240,13 @@ class Publicacion(models.Model):
 
     Example:
         >>> usuario = Usuario.objects.create(
-        ...     nombre="Paco Tester",
-        ...     alias="pacogamer30",
+        ...     first_name="Paco Tester",
+        ...     username="pacogamer30",
         ...     email="pacotest@gmail.com"
         ...     )
         >>> usuario.save()
         >>> habilidad = Habilidad.objects.create(
         ...     nombre="Photoshop",
-        ...     categoria="Software",
         ...     estado=True
         ...     )
         >>> habilidad.save()
@@ -251,6 +273,16 @@ class Publicacion(models.Model):
     autor = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='publicaciones', related_query_name='publicacion') # It has no-sense if the post remains when the user closes it's account, as you won't be able to contact him.
     habilidad = models.ForeignKey(Habilidad, on_delete=models.CASCADE, related_name='publicaciones', related_query_name='publicacion') # It has no-sense if the post remains when the skill is removed, as you won't be able to SkillSwap.
 
+
+    class Meta:
+        verbose_name = 'publicacion'
+        verbose_name_plural = 'publicaciones'
+        ordering = ('-fecha_creacion',)
+
+
+    def __str__(self):
+        return f"{self.autor.username} - {self.tipo.capitalize()} - {self.habilidad} "
+
 class Acuerdo(models.Model):
     """
     Model for an agreement in SkillSwap
@@ -270,26 +302,24 @@ class Acuerdo(models.Model):
 
     Example:
         >>> usuario_a = Usuario.objects.create(
-        ...     nombre="Paco Tester",
-        ...     alias="pacogamer30",
+        ...     first_name="Paco Tester",
+        ...     username="pacogamer30",
         ...     email="pacotest@gmail.com"
         ...     )
         >>> usuario_a.save()
         >>> usuario_b = Usuario.objects.create(
-        ...     nombre="Manolita Tester",
-        ...     alias="manola33",
+        ...     first_name="Manolita Tester",
+        ...     username="manola33",
         ...     email="manolagamer@outlook.com"
         ...     )
         >>> usuario_b.save()
         >>> habilidad_a = Habilidad.objects.create(
         ...     nombre="Photoshop",
-        ...     categoria="Software",
         ...     estado=True
         ...     )
         >>> habilidad_a.save()
         >>> habilidad_b = Habilidad.objects.create(
         ...     nombre="Inglés",
-        ...     categoria="Idioma",
         ...     estado=True
         ...     )
         >>> habilidad_b.save()
@@ -315,7 +345,8 @@ class Acuerdo(models.Model):
     )
 
     usuario_a = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='acuerdos_a', related_query_name='acuerdo_a') # User won't be able to delete its account unless the trade has been finished.
-    usuario_b = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='acuerdos_b', related_query_name='acuerdo_a') # User won't be able to delete its account unless the trade has been finished.
+    usuario_b = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='acuerdos_b', related_query_name='acuerdo_b') # User won't be able to delete its account unless the trade has been finished.
+    publicacion = models.ForeignKey('Publicacion',on_delete=models.SET_NULL,null=True,blank=True,related_name='acuerdos',related_query_name='acuerdo')
     semanas = models.PositiveIntegerField(default=1) # The user won't be able to use a negative integer.
     mins_sesion = models.PositiveIntegerField(default=60) # The user won't be able to use a negative integer. Default 1 hour
     sesiones_por_semana = models.PositiveIntegerField(default=1) # The user won't be able to use a negative integer. Default 1 session per week.
@@ -324,6 +355,9 @@ class Acuerdo(models.Model):
 
     habilidad_tradea_a = models.ForeignKey(Habilidad, on_delete=models.CASCADE, related_name='acuerdos_a', related_query_name='acuerdos_a') # It has no-sense if the post remains when the skill is removed, as you won't offer/search for a Null skill.
     habilidad_tradea_b = models.ForeignKey(Habilidad, on_delete=models.CASCADE, related_name='acuerdos_b', related_query_name='acuerdos_b') # It has no-sense if the post remains when the skill is removed, as you won't offer/search for a Null skill.
+
+    def __str__(self):
+        return f"{self.usuario_a} da {self.habilidad_tradea_a} <-> {self.usuario_b} da {self.habilidad_tradea_b}"
 
     def clean(self):
         """
@@ -341,10 +375,8 @@ class Acuerdo(models.Model):
 
         Example:
             >>> from django.core.exceptions import ValidationError
-            >>> usuario_a = Usuario.objects.create(nombre="Paco", alias="paco30", email="paco@test.com")
-            >>> usuario_b = Usuario.objects.create(nombre="Ana", alias="ana33", email="ana@test.com")
-            >>> habilidad_a = Habilidad.objects.create(nombre="Python", categoria="Programación", estado=True)
-            >>> habilidad_b = Habilidad.objects.create(nombre="Inglés", categoria="Idioma", estado=True)
+            >>> usuario_a = Usuario.objects.create(first_name="Paco", username="paco30", email="paco@test.com")
+            >>> usuario_b = Usuario.objects.create(first_name="Ana", username="ana33", email="ana@test.com")
             >>> acuerdo_mismo_usuario = Acuerdo(usuario_a=usuario_a, usuario_b=usuario_a, semanas=4, mins_sesion=60, sesiones_por_semana=3, condiciones="Test", habilidad_tradea_a=habilidad_a, habilidad_tradea_b=habilidad_b)
             >>> acuerdo_mismo_usuario.clean()
             Traceback (most recent call last):
@@ -379,6 +411,7 @@ class Acuerdo(models.Model):
             )
         ] # Used due to unique_together is deprecated.
 
+
 def validate_date_today_or_later(value):
     """
     Validates that a date is today or later.
@@ -408,6 +441,12 @@ def validate_date_today_or_later(value):
     if value < timezone.now().date():
         raise ValidationError('The date must be today or later.')
 
+
+
+
+
+
+
 class Sesion(models.Model):
     """
     Model for an session in SkillSwap
@@ -425,10 +464,10 @@ class Sesion(models.Model):
         acuerdo (Acuerdo): The SkillSwap agreement that this session is part of
 
     Example:
-        >>> usuario_a = Usuario.objects.create(nombre="Paco Tester", alias="pacogamer30", email="pacotest@gmail.com")
-        >>> usuario_b = Usuario.objects.create(nombre="Manolita Tester", alias="manola33", email="manolagamer@outlook.com")
-        >>> habilidad_a = Habilidad.objects.create(nombre="Photoshop", categoria="Software", estado=True)
-        >>> habilidad_b = Habilidad.objects.create(nombre="Inglés", categoria="Idioma", estado=True)
+        >>> usuario_a = Usuario.objects.create(first_name="Paco Tester", username="pacogamer30", email="pacotest@gmail.com")
+        >>> usuario_b = Usuario.objects.create(first_name="Manolita Tester", username="manola33", email="manolagamer@outlook.com")
+        >>> habilidad_a = Habilidad.objects.create(nombre="Photoshop", estado=True)
+        >>> habilidad_b = Habilidad.objects.create(nombre="Inglés", estado=True)
         >>> acuerdo = Acuerdo.objects.create(
         ...     usuario_a=usuario_a,
         ...     usuario_b=usuario_b,
@@ -455,13 +494,33 @@ class Sesion(models.Model):
     """
 
     fecha = models.DateField(validators=[validate_date_today_or_later])
+    hora = models.TimeField()
+    meet_link = models.URLField(blank=True, null=True)
     duracion_real = models.PositiveIntegerField(default=60, validators=[MinValueValidator(60), MaxValueValidator(240)])  # Minutes of actual session duration
-    resumen = models.CharField(max_length=200)
+    resumen = models.CharField(max_length=200, blank=True, null=True)
     asistencia_user_a = models.BooleanField(default=False)
     asistencia_user_b = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)     # True if Active, otherwise False. Python is faster checking for a boolean rather than a string
 
     acuerdo = models.ForeignKey(Acuerdo, on_delete=models.CASCADE, related_name='sesiones', related_query_name='sesion')
+
+    def __str__(self):
+        return f"{self.fecha}, {self.acuerdo}"
+
+    @property
+    def ha_finalizado(self):
+        tz = timezone.get_current_timezone()
+        start = datetime.combine(self.fecha, self.hora)
+        start = timezone.make_aware(start, tz)
+        end = start + timedelta(minutes=self.duracion_real)
+        now = timezone.now()
+
+        if now < start:
+            return 'upcoming'
+        elif now < end:
+            return 'ongoing'
+        else:
+            return 'finished'
 
     def clean(self):
         """
@@ -478,10 +537,10 @@ class Sesion(models.Model):
                 - Invalid agreement status ('En Curso' only),
 
         Example:
-        >>> usuario_a = Usuario.objects.create(nombre="Paco Tester", alias="pacogamer30", email="pacotest@gmail.com")
-        >>> usuario_b = Usuario.objects.create(nombre="Manolita Tester", alias="manola33", email="manolagamer@outlook.com")
-        >>> habilidad_a = Habilidad.objects.create(nombre="Photoshop", categoria="Software", estado=True)
-        >>> habilidad_b = Habilidad.objects.create(nombre="Inglés", categoria="Idioma", estado=True)
+        >>> usuario_a = Usuario.objects.create(first_name="Paco Tester", username="pacogamer30", email="pacotest@gmail.com")
+        >>> usuario_b = Usuario.objects.create(first_name="Manolita Tester", username="manola33", email="manolagamer@outlook.com")
+        >>> habilidad_a = Habilidad.objects.create(nombre="Photoshop", estado=True)
+        >>> habilidad_b = Habilidad.objects.create(nombre="Inglés", estado=True)
         >>> acuerdo = Acuerdo.objects.create(
         ...     usuario_a=usuario_a,
         ...     usuario_b=usuario_b,
@@ -509,7 +568,7 @@ class Sesion(models.Model):
         ValidationError: The agreement status must be ongoing.
         """
 
-        if self.acuerdo.estado != 'En Curso':
+        if self.acuerdo.estado != 'EN CURSO':
             raise ValidationError('The agreement status must be ongoing.')
 
     class Meta:
@@ -517,3 +576,27 @@ class Sesion(models.Model):
         verbose_name = 'sesion'
         verbose_name_plural = 'sesiones'
         ordering = ('fecha',)
+
+@receiver(post_save, sender=Usuario)
+def crear_perfil_usuario(sender, instance, created, **kwargs):
+    """
+    Create a profile for a new user.
+
+    Automatically creates a Perfil whenever a new Usuario is registered.
+
+    Args:
+        sender (type): The model class that sent the signal (Usuario).
+        instance (Usuario): The actual instance being saved.
+        created (bool): True if a new record was created, False if updated.
+        **kwargs: Additional keyword arguments passed by the signal.
+
+    Example:
+            >>> usuario = Usuario.objects.create(
+            ...     first_name="Paco",
+            ...     username="pacogamer30",
+            ...     email="pacotest@gmail.com"
+            ... )
+            >>> Perfil.objects.get(usuario=usuario)  # Profile created automatically
+    """
+    if created:
+        Perfil.objects.create(usuario=instance)
