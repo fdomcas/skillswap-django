@@ -74,7 +74,7 @@ class HomeView(ListView):
     - ``BUSCO`` or ``OFREZCO`` to filter by post type.
     - Any other term to filter by skill name or description.
 
-    If a query is present, renders ``core/post_list.html``, otherwise ``core/home.html``.
+    If a query is present, renders ``core/search_results.html``, otherwise ``core/home.html``.
 
     Examples
     --------
@@ -90,9 +90,11 @@ class HomeView(ListView):
 
     Search examples::
 
-        /?q=ajedrez         → posts with skill "Ajedrez"
-        /?q=busco ajedrez   → posts of type BUSCO with skill "Ajedrez"
-        /?q=ofrezco python  → posts of type OFREZCO with skill "Python"
+        /?q=ajedrez                              → posts with skill "Ajedrez"
+        /?q=busco ajedrez                        → posts of type BUSCO with skill "Ajedrez"
+        /?q=ofrezco python                       → posts of type OFREZCO with skill "Python"
+        /?q=busco python y ofrezco javascript    → BUSCO python OR OFREZCO javascript
+        /?q=busco python o gaming                → BUSCO python OR BUSCO gaming
     """
     context_object_name = 'posts'
     model = Publicacion
@@ -102,7 +104,6 @@ class HomeView(ListView):
     def get_template_names(self):
         q = self.request.GET.get('q', '').strip()
         if not q:
-            # Check if there are saved filters in session
             filters = SessionManager.get_filters(self.request)
             q = filters.get('q', '')
 
@@ -114,37 +115,45 @@ class HomeView(ListView):
         queryset = super().get_queryset()
         q = self.request.GET.get('q', '').strip()
 
-        # If no search in URL, try to restore from session
         if not q:
             filters = SessionManager.get_filters(self.request)
             q = filters.get('q', '')
         else:
-            # If new search, save to session
             SessionManager.save_filters(self.request, q=q)
 
-        # If no query at all, clear filters
         if not q:
             SessionManager.clear_filters(self.request)
 
         if q:
-            tipo_filter = None
-            search_terms = []
+            busco_terms = []
+            ofrezco_terms = []
+            generic_terms = []
+            current_list = generic_terms
 
-            for word in q.split():
-                word_upper = word.upper()
-                if word_upper in ['BUSCO', 'OFREZCO']:
-                    tipo_filter = word_upper
-                else:
-                    search_terms.append(word)
+            for word in q.lower().split():
+                if word == 'busco':
+                    current_list = busco_terms
+                elif word == 'ofrezco':
+                    current_list = ofrezco_terms
+                elif word not in ('y', 'o'):
+                    current_list.append(word)
 
-            if tipo_filter:
-                queryset = queryset.filter(tipo=tipo_filter)
+            def terms_to_q(terms):
+                result = Q()
+                for t in terms:
+                    result |= Q(habilidad__nombre__icontains=t) | Q(descripcion__icontains=t)
+                return result
 
-            for term in search_terms:
-                queryset = queryset.filter(
-                    Q(habilidad__nombre__icontains=term) |
-                    Q(descripcion__icontains=term)
-                )
+            combined = Q()
+            if busco_terms:
+                combined |= Q(tipo='BUSCO') & terms_to_q(busco_terms)
+            if ofrezco_terms:
+                combined |= Q(tipo='OFREZCO') & terms_to_q(ofrezco_terms)
+            if generic_terms:
+                combined |= terms_to_q(generic_terms)
+
+            if combined:
+                queryset = queryset.filter(combined)
 
         return queryset.distinct().select_related('autor', 'autor__perfil', 'habilidad').prefetch_related('autor__perfil__habilidades')
 
@@ -152,9 +161,9 @@ class HomeView(ListView):
         """
         Add saved filters to the template context.
 
-        Returns the context with filters recovered from session so the template can display the active search filters.
+        Returns the context with filters recovered from session so the template
+        can display the active search filters.
         """
-
         context = super().get_context_data(**kwargs)
         filters = SessionManager.get_filters(self.request)
         context['filters'] = filters
@@ -229,6 +238,19 @@ class CustomLogin(LoginView):
     """
     form_class = CustomloginForm
     template_name = 'registration/login.html'
+
+    def form_invalid(self, form):
+        username = form.data.get('username')
+        try:
+            user = Usuario.objects.get(username=username)
+            if not user.is_active:
+                messages.error(self.request, 'Tu cuenta ha sido baneada. Contacta con el administrador.')
+                form.errors.clear()  # <-- limpia el error del formulario
+        except Usuario.DoesNotExist:
+            pass
+        return super().form_invalid(form)
+    def get_success_url(self):
+        return reverse_lazy('core:home')
 
     def get_success_url(self):
         """
